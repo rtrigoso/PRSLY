@@ -1,0 +1,15 @@
+*.1
+*.deb
+*.rpm
+*.xbps
+*.pkg.tar.zst
+*.pkg.tar.xz
+dist/
+build/
+src/
+pkg/
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~

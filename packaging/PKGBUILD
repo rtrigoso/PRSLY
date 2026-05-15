@@ -1,0 +1,1 @@
+# @todo Write the Arch Linux PKGBUILD: set pkgname, pkgver, pkgrel, arch, license, source, sha256sums, and implement the package() function to install parsley.awk and the man page

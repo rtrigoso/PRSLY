@@ -1,0 +1,1 @@
+# @todo Write the XBPS source package template: set pkgname, version, revision, short_desc, maintainer, license, homepage, distfiles, checksum, and do_install()

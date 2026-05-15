@@ -1,0 +1,1 @@
+# @todo Define the GitHub Actions workflow that triggers on v* tag pushes and creates a GitHub Release, attaching the built man page and any release notes

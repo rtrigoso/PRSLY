@@ -1,0 +1,1 @@
+# @todo Implement the core AWK part-of-speech tagger: read words from stdin or a file, classify each as noun/verb/adjective/adverb/pronoun/conjunction/preposition/article/interjection, and print word-tag pairs

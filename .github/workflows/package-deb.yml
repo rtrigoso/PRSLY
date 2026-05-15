@@ -1,0 +1,1 @@
+# @todo Define the GitHub Actions workflow that triggers on v* tag pushes, runs make deb on an Ubuntu runner, and uploads the .deb as a release asset
