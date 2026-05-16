@@ -21,3 +21,6 @@ jobs:
 
       - name: Run conjunctions test
         run: bash tests/test_conjunctions.sh
+
+      - name: Run prepositions test
+        run: bash tests/test_prepositions.sh
