@@ -1,1 +1,76 @@
-# @todo Write bash tests that pipe known noun-containing sentences through parsley and assert each word is tagged as "noun"
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RUN_POS="$SCRIPT_DIR/../app/run_pos.awk"
+
+pass=0
+fail=0
+
+assert_noun() {
+    local description="$1"
+    local word="$2"
+    local output
+    output=$("$RUN_POS" "$word")
+    if echo "$output" | grep -q '"pos": "noun"'; then
+        echo "PASS: $description"
+        ((pass++))
+    else
+        echo "FAIL: $description"
+        echo "  Expected: $word -> noun"
+        echo "  Got:      $output"
+        ((fail++))
+    fi
+}
+
+assert_not_noun() {
+    local description="$1"
+    local word="$2"
+    local output
+    output=$("$RUN_POS" "$word")
+    if echo "$output" | grep -q '"pos": "noun"'; then
+        echo "FAIL: $description (should not be tagged as noun)"
+        echo "  Got: $output"
+        ((fail++))
+    else
+        echo "PASS: $description"
+        ((pass++))
+    fi
+}
+
+# -tion/-sion suffix
+assert_noun "nation is a noun"      "nation"
+assert_noun "tension is a noun"     "tension"
+assert_noun "solution is a noun"    "solution"
+
+# -ness suffix
+assert_noun "happiness is a noun"   "happiness"
+assert_noun "darkness is a noun"    "darkness"
+
+# -ment suffix
+assert_noun "movement is a noun"    "movement"
+assert_noun "statement is a noun"   "statement"
+
+# -ity/-ty suffix
+assert_noun "equality is a noun"    "equality"
+assert_noun "ability is a noun"     "ability"
+
+# -ance/-ence suffix
+assert_noun "distance is a noun"    "distance"
+assert_noun "presence is a noun"    "presence"
+
+# -ism/-ist suffix
+assert_noun "tourism is a noun"     "tourism"
+assert_noun "artist is a noun"      "artist"
+
+# -hood/-ship/-dom suffix
+assert_noun "childhood is a noun"   "childhood"
+assert_noun "friendship is a noun"  "friendship"
+assert_noun "freedom is a noun"     "freedom"
+
+# Non-nouns
+assert_not_noun "quickly is not a noun"  "quickly"
+assert_not_noun "and is not a noun"      "and"
+
+echo ""
+echo "Results - Nouns: $pass passed, $fail failed"
+[ $fail -eq 0 ]

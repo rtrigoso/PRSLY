@@ -16,11 +16,5 @@ jobs:
       - name: Lint awk files
         run: make lint
 
-      - name: Run pronouns test
-        run: bash tests/test_pronouns.sh
-
-      - name: Run conjunctions test
-        run: bash tests/test_conjunctions.sh
-
-      - name: Run prepositions test
-        run: bash tests/test_prepositions.sh
+      - name: Run tests
+        run: make test

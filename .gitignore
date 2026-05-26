@@ -6,6 +6,7 @@
 *.pkg.tar.xz
 dist/
 build/
+out/
 src/
 pkg/
 .DS_Store

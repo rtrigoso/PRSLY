@@ -10,7 +10,8 @@ This tool exists as a pushback against the growing habit of reaching for AI to s
 
 ## Features
 
-- Identifies parts of speech: nouns, verbs, adjectives, adverbs, pronouns, conjunctions, prepositions, articles, and interjections
+- Identifies parts of speech: nouns, verbs, adjectives, adverbs, pronouns, conjunctions, prepositions, determiners, auxiliaries, and interjections
+- Multi-pass classification using left and right neighbour context
 - Written in pure AWK with no interpreter, no runtime, and no dependencies
 - Distributed as native packages for major Linux distros and macOS
 - Bash-based test suite
@@ -54,35 +55,66 @@ makepkg -si
 ## Usage
 
 ```sh
-parsley [OPTIONS] [FILE | -]
+app/run_pos.awk [WORD ...]
 ```
+
+Pass the sentence as arguments. If no arguments are given, the classic pangram is used as a demo.
 
 ### Examples
 
 ```sh
-# Analyze a sentence from stdin
-echo "The quick brown fox jumps over the lazy dog" | parsley
+# Analyze a sentence
+app/run_pos.awk The quick brown fox jumps over the lazy dog
 
-# Analyze a text file
-parsley input.txt
-
-# Output in verbose mode
-parsley -v input.txt
+# Single word lookup
+app/run_pos.awk running
 ```
 
 ### Sample Output
 
+```json
+[
+  {"word": "The", "pos": "determiner", "score": 0.5101, "certainty": 100},
+  {"word": "quick", "pos": "adjective", "score": 0.3660, "certainty": 69},
+  {"word": "brown", "pos": "adjective", "score": 0.3660, "certainty": 69},
+  {"word": "fox", "pos": "noun", "score": 0.5101, "certainty": 57},
+  {"word": "jumps", "pos": "verb", "score": 0.6306, "certainty": 80},
+  {"word": "over", "pos": "preposition", "score": 0.7575, "certainty": 55},
+  {"word": "the", "pos": "determiner", "score": 0.5101, "certainty": 100},
+  {"word": "lazy", "pos": "adjective", "score": 0.3660, "certainty": 69},
+  {"word": "dog", "pos": "noun", "score": 0.5101, "certainty": 100}
+]
 ```
-The       article
-quick     adjective
-brown     adjective
-fox       noun
-jumps     verb
-over      preposition
-the       article
-lazy      adjective
-dog       noun
+
+Each entry includes:
+- `word` — the original token
+- `pos` — the assigned part of speech
+- `score` — the Wilson score lower bound for this classification (see below)
+- `certainty` — the winning score as a percentage of the sum of all Wilson scores
+
+## How It Works
+
+Classification runs in three passes over the input words:
+
+1. **Pass 1** — score each word using only left-context labels (previous one or two words)
+2. **Pass 2** — re-score any `unknown` words using the nearest resolved left and right neighbours from pass 1
+3. **Pass 3** — re-score any remaining unknowns using pass-2 resolved neighbours
+4. **Output pass** — re-run final scoring with fully resolved neighbour labels to produce display output
+
+### Scoring with the Wilson Score Interval
+
+Each part-of-speech category accumulates two counters as rules fire against a word: positive evidence (signals that support that category) and negative evidence (signals that argue against it). The final score for each category is the **lower bound of the Wilson score confidence interval** for a Bernoulli parameter:
+
 ```
+p̂ = pos / (pos + neg)
+score = (p̂ + z²/2n − z·√(p̂(1−p̂)/n + z²/4n²)) / (1 + z²/n)
+```
+
+where `n = pos + neg` and `z = 1.96` (95% confidence). The result is a value in [0, 1].
+
+The Wilson lower bound gives more meaningful scores than a raw net sum because it accounts for how much evidence exists, not just which side leads. A category supported by four strong signals and opposed by none scores higher than one supported by a single signal with no opposition — even if both have the same net count. Words with little evidence (few matching rules) receive a lower floor, which naturally expresses uncertainty rather than false confidence.
+
+The category with the highest Wilson score wins and is assigned as `pos`. Auxiliaries (`is`, `was`, `will`, etc.) bypass scoring entirely and are assigned with `score: 1.0000, certainty: 100`.
 
 ## Manual
 
@@ -102,10 +134,9 @@ man ./parsley.1
 
 ### Prerequisites
 
-- `awk` 
+- `awk`
 - `make`
 - `pandoc` (for man page generation)
-- `gawk` (for linting only)
 
 ### Build
 
@@ -150,7 +181,7 @@ bash tests/test_verbs.sh
 | `make man`       | Converts the Markdown man page to roff   |
 | `make test`      | Runs the full test suite                 |
 | `make clean`     | Removes build artifacts                  |
-| `make lint`      | Lints the AWK source with `gawk`         |
+| `make lint`      | Lints the AWK source                     |
 | `make deb`       | Builds a `.deb` package                  |
 | `make rpm`       | Builds an `.rpm` package                 |
 
@@ -170,11 +201,17 @@ Releases and packages are built and published automatically via **GitHub Actions
 
 ```
 parsley/
-    parsley.awk         Core AWK source
+    parsley.awk         Core AWK source (installed as `parsley`)
     parsley.1.md        Man page source (Markdown)
     parsley.1           Generated man page (roff)
     Makefile            Build, install, test, and package targets
+    app/
+        pos_classifier.awk  Scoring rules for all parts of speech
+        run_pos.awk         Multi-pass sentence classifier (executable)
     tests/              Bash test scripts
+        test_pronouns.sh
+        test_conjunctions.sh
+        test_prepositions.sh
         test_nouns.sh
         test_verbs.sh
     packaging/
