@@ -1,1 +1,0 @@
-# @todo Define the GitHub Actions workflow that triggers on v* tag pushes, computes the tarball SHA256, and bumps the version and hash in the Homebrew formula via a PR or direct push to the tap repo

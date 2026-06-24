@@ -1,0 +1,146 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+
+jobs:
+  deploy-apt:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout apt branch
+        uses: actions/checkout@v4
+        with:
+          ref: apt
+          path: apt-repo
+
+      - name: Download .deb from release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ github.event.workflow_run.head_branch }}"
+          gh release download "$tag" --repo "${{ github.repository }}" --pattern "*.deb"
+
+      - name: Update repository metadata
+        run: |
+          cp *.deb apt-repo/
+          cd apt-repo
+          dpkg-scanpackages --multiversion . > Packages
+          gzip -k -f Packages
+
+      - name: Commit and push
+        run: |
+          cd apt-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "parsley ${{ github.event.workflow_run.head_branch }}"
+          git push
+
+  deploy-fedora:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install copr-cli
+        run: pip install copr-cli
+
+      - name: Configure COPR credentials
+        run: |
+          mkdir -p ~/.config
+          printf '[copr-cli]\nlogin = %s\nusername = %s\ntoken = %s\ncopr_url = https://copr.fedorainfracloud.org\n' \
+            "${{ secrets.COPR_LOGIN }}" "${{ secrets.COPR_USERNAME }}" "${{ secrets.COPR_TOKEN }}" \
+            > ~/.config/copr
+
+      - name: Submit build to COPR
+        run: |
+          copr-cli buildscm \
+            --clone-url "https://github.com/${{ github.repository }}" \
+            --commit "${{ github.event.workflow_run.head_branch }}" \
+            --spec "packaging/rpm/parsley.spec" \
+            --type git \
+            "${{ secrets.COPR_USERNAME }}/parsley"
+
+  deploy-homebrew:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compute asset SHA256
+        id: meta
+        run: |
+          tag="${{ github.event.workflow_run.head_branch }}"
+          url="https://github.com/${{ github.repository }}/releases/download/${tag}/prsly"
+          sha256=$(curl -sL "$url" | sha256sum | awk '{print $1}')
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout tap repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/homebrew-parsley
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Update formula
+        run: |
+          sed -i "s|url \".*\"|url \"${{ steps.meta.outputs.url }}\"|" Formula/parsley.rb
+          sed -i "s|sha256 \".*\"|sha256 \"${{ steps.meta.outputs.sha256 }}\"|" Formula/parsley.rb
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/parsley.rb
+          git commit -m "parsley ${{ github.event.workflow_run.head_branch }}"
+          git push
+
+  deploy-xbps:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    container:
+      image: ghcr.io/void-linux/void-linux:latest-full-x86_64
+    steps:
+      - name: Install tools
+        run: xbps-install -Syu git xbps
+
+      - name: Download release assets
+        run: |
+          tag="${{ github.event.workflow_run.head_branch }}"
+          curl -sLO "https://github.com/${{ github.repository }}/releases/download/${tag}/prsly"
+          curl -sLO "https://github.com/${{ github.repository }}/releases/download/${tag}/parsley.1"
+
+      - name: Build xbps package
+        run: |
+          version="${{ github.event.workflow_run.head_branch }}"
+          version="${version#v}"
+          destdir=$(mktemp -d)
+          install -Dm755 prsly "$destdir/usr/bin/parsley"
+          install -Dm644 parsley.1 "$destdir/usr/share/man/man1/parsley.1"
+          xbps-create -A noarch \
+            -n "parsley-${version}_1" \
+            -s "Part-of-speech tagger written in AWK" \
+            --homepage "https://github.com/${{ github.repository }}" \
+            --license MIT \
+            "$destdir"
+
+      - name: Checkout xbps branch
+        uses: actions/checkout@v4
+        with:
+          ref: xbps
+          path: xbps-repo
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Index package and push
+        run: |
+          cp *.xbps xbps-repo/
+          xbps-rindex -a xbps-repo/*.xbps
+          cd xbps-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "parsley ${{ github.event.workflow_run.head_branch }}"
+          git push

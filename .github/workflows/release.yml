@@ -1,1 +1,74 @@
-# @todo Define the GitHub Actions workflow that triggers on v* tag pushes and creates a GitHub Release, attaching the built man page and any release notes
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get install -y gawk pandoc
+
+      - name: Build binary
+        run: make build
+
+      - name: Build man page
+        run: make man
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            out/prsly \
+            parsley.1
+
+  package-deb:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get install -y dpkg-dev
+
+      - name: Build .deb
+        run: make deb
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.ref_name }}" *.deb
+
+  package-rpm:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    container:
+      image: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: dnf install -y rpm-build make gh
+
+      - name: Build .rpm
+        run: make rpm
+
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.ref_name }}" ~/rpmbuild/RPMS/**/*.rpm
+

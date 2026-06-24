@@ -1,1 +1,0 @@
-# @todo Define the GitHub Actions workflow that triggers on v* tag pushes, runs make rpm on a Fedora runner, and uploads the .rpm as a release asset

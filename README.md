@@ -55,19 +55,22 @@ makepkg -si
 ## Usage
 
 ```sh
-app/run_pos.awk [WORD ...]
+parsley [WORD ...]
 ```
 
-Pass the sentence as arguments. If no arguments are given, the classic pangram is used as a demo.
+Pass the sentence as arguments. If no arguments are given, input is read from stdin.
 
 ### Examples
 
 ```sh
 # Analyze a sentence
-app/run_pos.awk The quick brown fox jumps over the lazy dog
+parsley The quick brown fox jumps over the lazy dog
 
 # Single word lookup
-app/run_pos.awk running
+parsley running
+
+# Pipe input
+echo "she runs quickly" | parsley
 ```
 
 ### Sample Output
@@ -144,18 +147,6 @@ man ./parsley.1
 make build
 ```
 
-### Install
-
-```sh
-make install
-```
-
-### Uninstall
-
-```sh
-make uninstall
-```
-
 ## Testing
 
 Tests are written as Bash scripts located in the `tests/` directory.
@@ -173,29 +164,25 @@ bash tests/test_verbs.sh
 
 ## Makefile Targets
 
-| Target           | Description                               |
-|------------------|-------------------------------------------|
-| `make build`     | Prepares the AWK script for distribution |
-| `make install`   | Installs parsley to `/usr/local/bin`     |
-| `make uninstall` | Removes parsley from the system          |
-| `make man`       | Converts the Markdown man page to roff   |
-| `make test`      | Runs the full test suite                 |
-| `make clean`     | Removes build artifacts                  |
-| `make lint`      | Lints the AWK source                     |
-| `make deb`       | Builds a `.deb` package                  |
-| `make rpm`       | Builds an `.rpm` package                 |
+| Target       | Description                               |
+|--------------|-------------------------------------------|
+| `make build` | Prepares the AWK script for distribution |
+| `make man`   | Converts the Markdown man page to roff   |
+| `make test`  | Runs the full test suite                 |
+| `make clean` | Removes build artifacts                  |
+| `make lint`  | Lints the AWK source                     |
+| `make deb`   | Builds a `.deb` package                  |
+| `make rpm`   | Builds an `.rpm` package                 |
 
 ## CI/CD
 
 Releases and packages are built and published automatically via **GitHub Actions**.
 
-| Workflow               | Trigger       | Description                       |
-|------------------------|---------------|-----------------------------------|
-| `test.yml`             | Push or PR    | Runs the full test suite          |
-| `release.yml`          | Tag push `v*` | Creates a GitHub Release          |
-| `package-deb.yml`      | Tag push `v*` | Builds and uploads `.deb` package |
-| `package-rpm.yml`      | Tag push `v*` | Builds and uploads `.rpm` package |
-| `homebrew-release.yml` | Tag push `v*` | Updates the Homebrew formula      |
+| Workflow      | Trigger                    | Description                                              |
+|---------------|----------------------------|----------------------------------------------------------|
+| `test.yml`    | Push or PR                 | Runs the full test suite                                 |
+| `release.yml` | Tag push `v*`              | Creates a GitHub Release, builds and uploads `.deb` and `.rpm` packages |
+| `deploy.yml`  | After `release.yml` passes | Deploys to APT, Fedora COPR, Homebrew, and XBPS         |
 
 ## Project Structure
 

@@ -1,5 +1,6 @@
-.PHONY: lint test build clean
+.PHONY: lint test build man clean
 
+VERSION = 0.0.1
 OUT = out
 
 lint:
@@ -19,6 +20,8 @@ build: $(OUT)/prsly
 $(OUT)/prsly: app/pos_classifier.awk app/run_pos.awk
 	mkdir -p $(OUT)
 	printf '#!/bin/sh\nset -e\n\n' > $@
+	printf 'VERSION="%s"\n\n' $(VERSION) >> $@
+	printf 'case "$$1" in --version|-v) echo "parsley $$VERSION"; exit 0;; esac\n\n' >> $@
 	printf '_PRSLY_CLASSIFIER=$$(mktemp)\n' >> $@
 	printf '_PRSLY_RUNNER=$$(mktemp)\n' >> $@
 	printf 'trap '"'"'rm -f "$$_PRSLY_CLASSIFIER" "$$_PRSLY_RUNNER"'"'"' EXIT\n\n' >> $@
@@ -30,6 +33,9 @@ $(OUT)/prsly: app/pos_classifier.awk app/run_pos.awk
 	printf 'RUNNER_EOF\n\n' >> $@
 	printf 'awk -v CLASSIFIER="$$_PRSLY_CLASSIFIER" -f "$$_PRSLY_RUNNER" "$$@"\n' >> $@
 	chmod u+x $@
+
+man: parsley.1.md
+	pandoc -s -t man parsley.1.md -o parsley.1
 
 clean:
 	rm -rf $(OUT)
