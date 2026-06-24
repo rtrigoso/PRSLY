@@ -6,6 +6,27 @@ RUN_POS="$SCRIPT_DIR/../app/run_pos.awk"
 pass=0
 fail=0
 
+assert_pos() {
+    local description="$1"
+    local sentence="$2"
+    local word="$3"
+    local expected_pos="$4"
+    local output
+    output=$(awk -v CLASSIFIER="$SCRIPT_DIR/../app/pos_classifier.awk" -f "$RUN_POS" "$sentence")
+    local got_pos
+    got_pos=$(echo "$output" | awk -v w="\"$word\"" '$0 ~ "\"word\": " w { gsub(/.*"pos": "/, ""); gsub(/".*/, ""); print; exit }')
+    if [ "$got_pos" = "$expected_pos" ]; then
+        echo "PASS: $description"
+        ((pass++))
+    else
+        echo "FAIL: $description"
+        echo "  Expected: $word -> $expected_pos"
+        echo "  Got:      $word -> $got_pos"
+        echo "  Full:     $output"
+        ((fail++))
+    fi
+}
+
 assert_noun() {
     local description="$1"
     local word="$2"
@@ -66,6 +87,24 @@ assert_noun "artist is a noun"      "artist"
 assert_noun "childhood is a noun"   "childhood"
 assert_noun "friendship is a noun"  "friendship"
 assert_noun "freedom is a noun"     "freedom"
+
+# From "the tree felt quickly into the ground"
+assert_pos "tree is a noun in 'the tree felt quickly into the ground'" \
+    "the tree felt quickly into the ground" "tree" "noun"
+assert_pos "ground is a noun in 'the tree felt quickly into the ground'" \
+    "the tree felt quickly into the ground" "ground" "noun"
+
+# From "Moby Dick is a classic story about challenges and obsession."
+assert_pos "story is a noun in 'Moby Dick is a classic story about challenges and obsession.'" \
+    "Moby Dick is a classic story about challenges and obsession." "story" "noun"
+assert_pos "challenges is a noun in 'Moby Dick is a classic story about challenges and obsession.'" \
+    "Moby Dick is a classic story about challenges and obsession." "challenges" "noun"
+assert_pos "obsession is a noun in 'Moby Dick is a classic story about challenges and obsession.'" \
+    "Moby Dick is a classic story about challenges and obsession." "obsession" "noun"
+
+# From "The only person you are destined to become is the person you decide to be."
+assert_pos "person is a noun in 'The only person you are destined to become is the person you decide to be.'" \
+    "The only person you are destined to become is the person you decide to be." "person" "noun"
 
 # Non-nouns
 assert_not_noun "quickly is not a noun"  "quickly"

@@ -30,7 +30,7 @@ jobs:
             --title "${{ github.ref_name }}" \
             --generate-notes \
             out/prsly \
-            parsley.1
+            prsly.1
 
   package-deb:
     needs: release

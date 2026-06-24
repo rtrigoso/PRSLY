@@ -10,9 +10,6 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
     return w
 }
 
-# ── LEXICAL EXCEPTIONS (checked first, high priority) ────────────────────────
-# These words have misleading suffixes — pin them to the correct POS
-
 /^[Uu]nless$/           { conjunction_pos += 8; adjective_neg += 8 }
 /^[Nn]evertheless$/     { conjunction_pos += 8; adjective_neg += 8 }
 /^[Dd]uring$/           { preposition_pos += 8; verb_neg += 8 }
@@ -35,10 +32,11 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /^[Ii]nto$/             { preposition_pos += 8; adjective_neg += 4 }
 /^[Ww]ooden$/           { adjective_pos += 8; verb_neg += 8 }
 /^[Ll]ittle$/           { adjective_pos += 8; noun_neg += 4 }
+/^[Oo]nly$/             { noun_neg += 8 }
 /^[Rr]esearch$/         { noun_pos += 8; verb_neg += 4 }
 /^[Ww]ell$/             { adverb_pos += 4; interjection_pos += 3 }
+/^[Hh]ow$/              { adverb_pos += 4 }
 
-# ── NOUN : morphological positive ────────────────────────────────────────────
 /(tion|sion)$/          { noun_pos += 4 }
 /ness$/                 { noun_pos += 4 }
 /ment$/                 { noun_pos += 4 }
@@ -52,23 +50,21 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /dom$/                  { noun_pos += 4 }
 /(ery|ry)$/             { noun_pos += 3 }
 
-# -er/-or/-ar as agent noun: require stem length >=4 to reduce false positives
 /^[a-zA-Z]{5,}er$/      { noun_pos += 3 }
-/^[a-zA-Z]{5,}or$/      { noun_pos += 3 }
+/^[a-zA-Z]{3,}or$/      { noun_pos += 3 }
 /^[a-zA-Z]{5,}ar$/      { noun_pos += 2 }
 
-# ── NOUN : morphological negative ────────────────────────────────────────────
 /ly$/                   { noun_neg += 3 }
 
-# ── NOUN : positional positive ───────────────────────────────────────────────
 /./  { if (prev1_label == "determiner")                                noun_pos += 4 }
 /./  { if (prev1_label == "adjective")                                 noun_pos += 3 }
 /./  { if (prev1_label == "adjective" && prev2_label == "determiner")  noun_pos += 4 }
+/./  { if (prev1_label == "verb"      && prev2_label == "verb")        noun_pos += 3 }
+/./  { if (prev1_label == "preposition")                               noun_pos += 3 }
+/./  { if (prev2_label == "determiner" && prev1_label != "noun")        noun_pos += 3 }
 
-# ── NOUN : positional negative ───────────────────────────────────────────────
-/./  { if (prev1_label == "pronoun")   noun_neg += 3 }
+/./  { if (prev1_label == "pronoun" && prev1_word !~ /^([Mm]y|[Yy]our|[Hh]is|[Ii]ts|[Oo]ur|[Tt]heir)$/) noun_neg += 3 }
 
-# ── PRONOUN : lexical positive ───────────────────────────────────────────────
 /^[Ii]$/                { pronoun_pos += 4 }
 /^[Hh]e$/               { pronoun_pos += 4 }
 /^[Ss]he$/              { pronoun_pos += 4 }
@@ -94,38 +90,31 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /^[Ww]hich$/            { pronoun_pos += 3 }
 /^[Tt]hat$/             { pronoun_pos += 3 }
 
-# ── PRONOUN : positional negative ────────────────────────────────────────────
 /./  { if (prev1_label == "determiner")  pronoun_neg += 3 }
 
-# ── VERB : morphological positive ────────────────────────────────────────────
 /ing$/                  { verb_pos += 3 }
 /ed$/                   { verb_pos += 3 }
 /(ize|ise)$/            { verb_pos += 4 }
 /(ify|fy)$/             { verb_pos += 4 }
-/^[Rr]e[a-zA-Z]{3,}/   { verb_pos += 3 }
-/^[Dd]e[a-zA-Z]{3,}/   { verb_pos += 3 }
-/^[Uu]n[a-zA-Z]{3,}/   { verb_pos += 3 }
-/^[Mm]is[a-zA-Z]{3,}/  { verb_pos += 3 }
-/^[Oo]ut[a-zA-Z]{3,}/  { verb_pos += 3 }
+/^[Rr]e[a-zA-Z]{3,}/   { if ($0 !~ /ly$/) verb_pos += 3 }
+/^[Dd]e[a-zA-Z]{3,}/   { if ($0 !~ /ly$/) verb_pos += 3 }
+/^[Uu]n[a-zA-Z]{3,}/   { if ($0 !~ /ly$/) verb_pos += 3 }
+/^[Mm]is[a-zA-Z]{3,}/  { if ($0 !~ /ly$/) verb_pos += 3 }
+/^[Oo]ut[a-zA-Z]{3,}/  { if ($0 !~ /ly$/) verb_pos += 3 }
 
-# -en verb rule: require longer stem to avoid matching 'wooden', 'then', etc.
 /^[a-zA-Z]{4,}en$/      { verb_pos += 3 }
 
-# -ate verb rule: require longer stem to avoid 'late', 'rate', etc.
 /^[a-zA-Z]{5,}ate$/     { verb_pos += 3 }
 
-# ── VERB : morphological negative ────────────────────────────────────────────
 /(tion|ness|ment)$/     { verb_neg += 3 }
 
-# ── VERB : positional positive ───────────────────────────────────────────────
-/./  { if (prev1_label == "pronoun")   verb_pos += 4 }
-/./  { if (prev1_label == "noun")      verb_pos += 4 }
+/./  { if (prev1_label == "pronoun" && prev1_word !~ /^([Mm]y|[Yy]our|[Hh]is|[Ii]ts|[Oo]ur|[Tt]heir)$/) verb_pos += 4 }
 /./  { if (prev1_label == "auxiliary") verb_pos += 4 }
+/ing$/  { if (prev1_label == "verb")  verb_pos += 4 }
 
-# ── VERB : positional negative ───────────────────────────────────────────────
-/./  { if (prev1_label == "determiner") verb_neg += 3 }
+/./  { if (prev1_label == "determiner") verb_neg += 6 }
+/./  { if (prev2_label == "determiner") verb_neg += 4 }
 
-# ── AUXILIARY : lexical ───────────────────────────────────────────────────────
 /^[Ii]s$/               { is_aux = 1 }
 /^[Ww]as$/              { is_aux = 1 }
 /^[Hh]as$/              { is_aux = 1 }
@@ -139,14 +128,12 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /^[Cc]ould$/            { is_aux = 1 }
 /^[Ss]hould$/           { is_aux = 1 }
 
-# ── DETERMINER : lexical ─────────────────────────────────────────────────────
-/^[Tt]he$/              { determiner_pos += 4 }
-/^[Aa]n?$/              { determiner_pos += 4 }
-/^[Tt]his$/             { determiner_pos += 4 }
-/^[Tt]hese$/            { determiner_pos += 4 }
-/^[Tt]hose$/            { determiner_pos += 4 }
+/^[Tt]he$/              { determiner_pos += 4; is_det = 1 }
+/^[Aa]n?$/              { determiner_pos += 4; is_det = 1 }
+/^[Tt]his$/             { determiner_pos += 4; is_det = 1 }
+/^[Tt]hese$/            { determiner_pos += 4; is_det = 1 }
+/^[Tt]hose$/            { determiner_pos += 4; is_det = 1 }
 
-# ── ADJECTIVE : morphological positive ───────────────────────────────────────
 /ful$/                  { adjective_pos += 4 }
 /less$/                 { adjective_pos += 4 }
 /(ous|ious)$/           { adjective_pos += 4 }
@@ -164,26 +151,22 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /^[Aa]nti-[a-zA-Z]+/   { adjective_pos += 3 }
 /^[Hh]yper[a-zA-Z]+/   { adjective_pos += 3 }
 
-# comparative/superlative: require longer stem to reduce noise
 /^[a-zA-Z]{4,}er$/      { adjective_pos += 2 }
 /^[a-zA-Z]{4,}est$/     { adjective_pos += 2 }
 
-# ── ADJECTIVE : morphological negative ───────────────────────────────────────
 /ly$/                   { adjective_neg += 4 }
 
-# ── ADJECTIVE : positional positive ──────────────────────────────────────────
-/./  { if (prev1_label == "determiner") adjective_pos += 3 }
+/./  { if (prev1_label == "determiner" && next1_label == "noun") adjective_pos += 3 }
 /./  { if (prev1_label == "adverb")     adjective_pos += 3 }
+/./  { if (prev1_label == "auxiliary")  adjective_pos += 5 }
+/./  { if (prev1_label == "pronoun" && next1_label == "noun") adjective_pos += 3 }
 
-# ── ADJECTIVE : positional negative ──────────────────────────────────────────
-/./  { if (prev1_label == "pronoun")    adjective_neg += 3 }
+/./  { if (prev1_label == "pronoun" && next1_label != "noun")    adjective_neg += 3 }
 /./  { if (prev1_label == "noun")       adjective_neg += 2 }
 
-# ── ADVERB : morphological positive ──────────────────────────────────────────
-/ly$/                   { adverb_pos += 3 }
+/ly$/                   { adverb_pos += 5 }
 /wards?$/               { adverb_pos += 4 }
 
-# -wise scores higher than -ise verb rule to win the tie
 /wise$/                 { adverb_pos += 5 }
 
 /ways$/                 { adverb_pos += 3 }
@@ -209,14 +192,11 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /^[Qq]uite$/            { adverb_pos += 3 }
 /^[Rr]ather$/           { adverb_pos += 3 }
 
-# ── ADVERB : positional positive ─────────────────────────────────────────────
 /./  { if (prev1_label == "verb")      adverb_pos += 3 }
 /./  { if (prev1_label == "adjective") adverb_pos += 3 }
 
-# ── ADVERB : positional negative ─────────────────────────────────────────────
 /./  { if (prev1_label == "determiner") adverb_neg += 4 }
 
-# ── PREPOSITION : lexical positive ───────────────────────────────────────────
 /^[Ii]n$/               { preposition_pos += 4 }
 /^[Oo]n$/               { preposition_pos += 4 }
 /^[Aa]t$/               { preposition_pos += 4 }
@@ -256,7 +236,6 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /^[Ee]xcept$/           { preposition_pos += 4 }
 /^[Vv]ia$/              { preposition_pos += 4 }
 
-# ── CONJUNCTION : lexical positive ───────────────────────────────────────────
 /^[Aa]nd$/              { conjunction_pos += 4 }
 /^[Bb]ut$/              { conjunction_pos += 4 }
 /^[Oo]r$/               { conjunction_pos += 4 }
@@ -281,10 +260,8 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /^[Bb]oth$/             { conjunction_pos += 3 }
 /^[Ww]hether$/          { conjunction_pos += 3 }
 
-# ── CONJUNCTION : morphological negative ─────────────────────────────────────
 /(tion|ness|ing)$/      { conjunction_neg += 4 }
 
-# ── INTERJECTION : lexical positive ──────────────────────────────────────────
 /^[Oo]h$/               { interjection_pos += 4 }
 /^[Ww]ow$/              { interjection_pos += 4 }
 /^[Hh]ey$/              { interjection_pos += 4 }
@@ -305,11 +282,15 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /^[Nn]o$/               { interjection_pos += 3 }
 /!$/                    { interjection_pos += 3 }
 
-# ── INTERJECTION : morphological negative ────────────────────────────────────
 /(tion|ment|ing|ed)$/   { interjection_neg += 3 }
 
-# ── SCORE & REPORT ────────────────────────────────────────────────────────────
 END {
+    if (is_det) {
+        print "  {\"word\": \"" CURRENT_WORD "\", \"pos\": \"determiner\", \"score\": 1.0000, \"certainty\": 100}"
+        if (LABEL_FILE != "") print "determiner" > LABEL_FILE
+        exit
+    }
+
     if (is_aux) {
         print "  {\"word\": \"" CURRENT_WORD "\", \"pos\": \"auxiliary\", \"score\": 1.0000, \"certainty\": 100}"
         if (LABEL_FILE != "") print "auxiliary" > LABEL_FILE
@@ -353,21 +334,21 @@ END {
     if (LABEL_FILE != "") print best_label > LABEL_FILE
 }
 
-# ── NEXT-WORD POSITIONAL RULES (next1_label passed in from shell) ─────────────
+/./  { if (prev1_label == "noun" && preposition_pos == 0 && conjunction_pos == 0) verb_pos += 4 }
 
-# verb: followed by preposition — but only if this word has no preposition or
-# conjunction score of its own (stops "before since" giving verb to "before")
+/./  { if (prev1_label == "adverb" && prev2_label == "pronoun") verb_pos += 4 }
+
 /./  { if (next1_label == "preposition" && preposition_pos == 0 && conjunction_pos == 0 && determiner_pos == 0) verb_pos += 4 }
 
-# verb: weaker — followed by adverb
 /./  { if (next1_label == "adverb" && preposition_pos == 0 && conjunction_pos == 0 && determiner_pos == 0) verb_pos += 2 }
 
-# noun: followed by auxiliary ("the dog was") — guard pronoun words
-/./  { if (next1_label == "auxiliary" && pronoun_pos == 0)   noun_pos += 4 }
+/./  { if (next1_label == "auxiliary" && pronoun_pos == 0 && prev1_word != "to")   noun_pos += 4 }
 
-# adjective: followed by noun — guard determiners and prepositions
-/./  { if (next1_label == "noun" && determiner_pos == 0 && preposition_pos == 0 && pronoun_pos == 0) adjective_pos += 4 }
+/./  { if (prev1_word ~ /^([Mm]y|[Yy]our|[Hh]is|[Ii]ts|[Oo]ur|[Tt]heir)$/) noun_pos += 4 }
 
-# adverb: followed by adjective — guard words that already have a clear label
-# use a weak boost so it doesn't override comparative adjectives like "bigger"
+/./  { if (prev1_label == "preposition" && prev1_word == "to") verb_pos += 5 }
+
+/./  { if (next1_label == "noun" && determiner_pos == 0 && preposition_pos == 0 && pronoun_pos == 0 && conjunction_pos == 0) adjective_pos += 4 }
+
 /./  { if (next1_label == "adjective" && preposition_pos == 0 && conjunction_pos == 0 && determiner_pos == 0) adverb_pos += 2 }
+/./  { if (next1_label == "adjective" && prev1_label == "determiner") adverb_neg += 4 }

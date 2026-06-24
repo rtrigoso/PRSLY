@@ -1,12 +1,12 @@
-# parsley
+# PRSLY
 
 Lightweight part-of-speech tagger written purely in AWK, with cross-distro packaging (deb, rpm, XBPS, PKGBUILD, Homebrew) and CI/CD via GitHub Actions.
 
 ## Overview
 
-**parsley** is a command-line tool that parses sentences and categorizes each word as a part of speech: nouns, verbs, adjectives, adverbs, pronouns, prepositions, conjunctions, and more. It is written entirely in `awk`, with no external runtime dependencies, making it fast, portable, and easy to embed in scripts or pipelines.
+**prsly** is a command-line tool that parses sentences and categorizes each word as a part of speech: nouns, verbs, adjectives, adverbs, pronouns, prepositions, conjunctions, and more. It is written entirely in `awk`, with no external runtime dependencies, making it fast, portable, and easy to embed in scripts or pipelines.
 
-This tool exists as a pushback against the growing habit of reaching for AI to solve problems that do not warrant it. Tasks like part-of-speech tagging are well-understood, deterministic, and cheap to implement with the right tool. Offloading them to large language models wastes compute, energy, and infrastructure that could be directed at genuinely hard problems. parsley is a reminder that clever, purpose-built solutions still matter.
+This tool exists as a pushback against the growing habit of reaching for AI to solve problems that do not warrant it. Tasks like part-of-speech tagging are well-understood, deterministic, and cheap to implement with the right tool. Offloading them to large language models wastes compute, energy, and infrastructure that could be directed at genuinely hard problems. prsly is a reminder that clever, purpose-built solutions still matter.
 
 ## Features
 
@@ -22,40 +22,40 @@ This tool exists as a pushback against the growing habit of reaching for AI to s
 ### macOS via Homebrew
 
 ```sh
-brew tap your-username/parsley
-brew install parsley
+brew tap your-username/prsly
+brew install prsly
 ```
 
 ### Debian and Ubuntu
 
 ```sh
-sudo dpkg -i parsley_<version>_amd64.deb
+sudo dpkg -i prsly_<version>_amd64.deb
 ```
 
 ### Fedora and RHEL
 
 ```sh
-sudo rpm -i parsley-<version>.x86_64.rpm
+sudo rpm -i prsly-<version>.x86_64.rpm
 ```
 
 ### Void Linux via XBPS
 
 ```sh
-sudo xbps-install parsley
+sudo xbps-install prsly
 ```
 
 ### Arch Linux via PKGBUILD
 
 ```sh
-git clone https://aur.archlinux.org/parsley.git
-cd parsley
+git clone https://aur.archlinux.org/prsly.git
+cd prsly
 makepkg -si
 ```
 
 ## Usage
 
 ```sh
-parsley [WORD ...]
+prsly [WORD ...]
 ```
 
 Pass the sentence as arguments. If no arguments are given, input is read from stdin.
@@ -64,28 +64,23 @@ Pass the sentence as arguments. If no arguments are given, input is read from st
 
 ```sh
 # Analyze a sentence
-parsley The quick brown fox jumps over the lazy dog
+prsly the dog barked loudly
 
 # Single word lookup
-parsley running
+prsly running
 
 # Pipe input
-echo "she runs quickly" | parsley
+echo "she runs quickly" | prsly
 ```
 
 ### Sample Output
 
 ```json
 [
-  {"word": "The", "pos": "determiner", "score": 0.5101, "certainty": 100},
-  {"word": "quick", "pos": "adjective", "score": 0.3660, "certainty": 69},
-  {"word": "brown", "pos": "adjective", "score": 0.3660, "certainty": 69},
-  {"word": "fox", "pos": "noun", "score": 0.5101, "certainty": 57},
-  {"word": "jumps", "pos": "verb", "score": 0.6306, "certainty": 80},
-  {"word": "over", "pos": "preposition", "score": 0.7575, "certainty": 55},
   {"word": "the", "pos": "determiner", "score": 0.5101, "certainty": 100},
-  {"word": "lazy", "pos": "adjective", "score": 0.3660, "certainty": 69},
-  {"word": "dog", "pos": "noun", "score": 0.5101, "certainty": 100}
+  {"word": "dog", "pos": "noun", "score": 0.5101, "certainty": 53},
+  {"word": "barked", "pos": "verb", "score": 0.7008, "certainty": 100},
+  {"word": "loudly", "pos": "adverb", "score": 0.6097, "certainty": 100}
 ]
 ```
 
@@ -97,12 +92,15 @@ Each entry includes:
 
 ## How It Works
 
-Classification runs in three passes over the input words:
+Classification runs in four passes over the input words:
 
 1. **Pass 1** — score each word using only left-context labels (previous one or two words)
-2. **Pass 2** — re-score any `unknown` words using the nearest resolved left and right neighbours from pass 1
-3. **Pass 3** — re-score any remaining unknowns using pass-2 resolved neighbours
-4. **Output pass** — re-run final scoring with fully resolved neighbour labels to produce display output
+2. **Pass 2** — re-score any `unknown` words using the nearest resolved neighbours from Pass 1
+3. **Pass 3** — re-score any still-unknown words using Pass 2 resolved neighbours
+4. **Pass 4** — re-score low-certainty words using fully resolved neighbours from all sides
+5. **Output pass** — re-run final scoring with resolved neighbour labels to produce display output
+
+Trailing punctuation (`.`, `!`, `?`) is stripped from each token before classification. Sentence-ending punctuation also resets context so the following word is not influenced by the previous sentence.
 
 ### Scoring with the Wilson Score Interval
 
@@ -130,7 +128,7 @@ make man
 To view it locally:
 
 ```sh
-man ./parsley.1
+man ./prsly.1
 ```
 
 ## Building from Source
@@ -166,13 +164,11 @@ bash tests/test_verbs.sh
 
 | Target       | Description                               |
 |--------------|-------------------------------------------|
-| `make build` | Prepares the AWK script for distribution |
+| `make build` | Bundles the AWK source into the binary   |
 | `make man`   | Converts the Markdown man page to roff   |
 | `make test`  | Runs the full test suite                 |
 | `make clean` | Removes build artifacts                  |
 | `make lint`  | Lints the AWK source                     |
-| `make deb`   | Builds a `.deb` package                  |
-| `make rpm`   | Builds an `.rpm` package                 |
 
 ## CI/CD
 
@@ -187,10 +183,10 @@ Releases and packages are built and published automatically via **GitHub Actions
 ## Project Structure
 
 ```
-parsley/
-    parsley.awk         Core AWK source (installed as `parsley`)
-    parsley.1.md        Man page source (Markdown)
-    parsley.1           Generated man page (roff)
+prsly/
+    prsly.awk         Core AWK source (installed as `prsly`)
+    prsly.1.md        Man page source (Markdown)
+    prsly.1           Generated man page (roff)
     Makefile            Build, install, test, and package targets
     app/
         pos_classifier.awk  Scoring rules for all parts of speech
@@ -201,6 +197,7 @@ parsley/
         test_prepositions.sh
         test_nouns.sh
         test_verbs.sh
+        test_adjectives.sh
     packaging/
         deb/            Debian packaging files
         rpm/            RPM spec file

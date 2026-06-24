@@ -38,7 +38,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "parsley ${{ github.event.workflow_run.head_branch }}"
+          git commit -m "prsly ${{ github.event.workflow_run.head_branch }}"
           git push
 
   deploy-fedora:
@@ -60,9 +60,9 @@ jobs:
           copr-cli buildscm \
             --clone-url "https://github.com/${{ github.repository }}" \
             --commit "${{ github.event.workflow_run.head_branch }}" \
-            --spec "packaging/rpm/parsley.spec" \
+            --spec "packaging/rpm/prsly.spec" \
             --type git \
-            "${{ secrets.COPR_USERNAME }}/parsley"
+            "${{ secrets.COPR_USERNAME }}/prsly"
 
   deploy-homebrew:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
@@ -80,20 +80,20 @@ jobs:
       - name: Checkout tap repo
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/homebrew-parsley
+          repository: ${{ github.repository_owner }}/homebrew-prsly
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
       - name: Update formula
         run: |
-          sed -i "s|url \".*\"|url \"${{ steps.meta.outputs.url }}\"|" Formula/parsley.rb
-          sed -i "s|sha256 \".*\"|sha256 \"${{ steps.meta.outputs.sha256 }}\"|" Formula/parsley.rb
+          sed -i "s|url \".*\"|url \"${{ steps.meta.outputs.url }}\"|" Formula/prsly.rb
+          sed -i "s|sha256 \".*\"|sha256 \"${{ steps.meta.outputs.sha256 }}\"|" Formula/prsly.rb
 
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Formula/parsley.rb
-          git commit -m "parsley ${{ github.event.workflow_run.head_branch }}"
+          git add Formula/prsly.rb
+          git commit -m "prsly ${{ github.event.workflow_run.head_branch }}"
           git push
 
   deploy-xbps:
@@ -111,17 +111,17 @@ jobs:
         run: |
           tag="${{ github.event.workflow_run.head_branch }}"
           curl -sLO "https://github.com/${{ github.repository }}/releases/download/${tag}/prsly"
-          curl -sLO "https://github.com/${{ github.repository }}/releases/download/${tag}/parsley.1"
+          curl -sLO "https://github.com/${{ github.repository }}/releases/download/${tag}/prsly.1"
 
       - name: Build xbps package
         run: |
           version="${{ github.event.workflow_run.head_branch }}"
           version="${version#v}"
           destdir=$(mktemp -d)
-          install -Dm755 prsly "$destdir/usr/bin/parsley"
-          install -Dm644 parsley.1 "$destdir/usr/share/man/man1/parsley.1"
+          install -Dm755 prsly "$destdir/usr/bin/prsly"
+          install -Dm644 prsly.1 "$destdir/usr/share/man/man1/prsly.1"
           xbps-create -A noarch \
-            -n "parsley-${version}_1" \
+            -n "prsly-${version}_1" \
             -s "Part-of-speech tagger written in AWK" \
             --homepage "https://github.com/${{ github.repository }}" \
             --license MIT \
@@ -142,5 +142,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "parsley ${{ github.event.workflow_run.head_branch }}"
+          git commit -m "prsly ${{ github.event.workflow_run.head_branch }}"
           git push

@@ -1,22 +1,22 @@
 ---
-title: PARSLEY
+title: PRSLY
 section: 1
 header: User Commands
-footer: parsley
+footer: prsly
 date: June 2026
 ---
 
 # NAME
 
-parsley - part-of-speech tagger written in AWK
+prsly - part-of-speech tagger written in AWK
 
 # SYNOPSIS
 
-**parsley** [*WORD* ...]
+**prsly** [*WORD* ...]
 
 # DESCRIPTION
 
-**parsley** reads a sentence and assigns each word a part-of-speech label. Words may be supplied as command-line arguments or as a single line on standard input.
+**prsly** reads a sentence and assigns each word a part-of-speech label. Words may be supplied as command-line arguments or as a single line on standard input.
 
 Classification runs in four passes. The first pass scores each word using only left-context labels. Subsequent passes re-score unresolved words using neighbours resolved in earlier passes. A final pass re-scores low-certainty words once all neighbours are settled.
 
@@ -29,7 +29,7 @@ Output is a JSON array, one object per word, printed to standard output.
 Each element of the JSON array contains four fields:
 
 **word**
-: The original token as supplied.
+: The token after stripping trailing punctuation (`.`, `!`, `?`, etc.).
 
 **pos**
 : The assigned part of speech. One of: *noun*, *pronoun*, *verb*, *auxiliary*, *adjective*, *adverb*, *preposition*, *conjunction*, *interjection*, *determiner*, or *unknown*.
@@ -45,34 +45,29 @@ Each element of the JSON array contains four fields:
 Analyse a sentence passed as arguments:
 
 ```
-parsley The quick brown fox jumps over the lazy dog
+prsly the dog barked loudly
 ```
 
 Read a sentence from standard input:
 
 ```
-echo "She quietly reads every morning" | parsley
+echo "She quietly reads every morning" | prsly
 ```
 
 Look up a single word:
 
 ```
-parsley running
+prsly running
 ```
 
 Sample output:
 
 ```json
 [
-  {"word": "The", "pos": "determiner", "score": 0.5101, "certainty": 100},
-  {"word": "quick", "pos": "adjective", "score": 0.3660, "certainty": 69},
-  {"word": "brown", "pos": "adjective", "score": 0.3660, "certainty": 69},
-  {"word": "fox", "pos": "noun", "score": 0.5101, "certainty": 57},
-  {"word": "jumps", "pos": "verb", "score": 0.6306, "certainty": 80},
-  {"word": "over", "pos": "preposition", "score": 0.7575, "certainty": 55},
   {"word": "the", "pos": "determiner", "score": 0.5101, "certainty": 100},
-  {"word": "lazy", "pos": "adjective", "score": 0.3660, "certainty": 69},
-  {"word": "dog", "pos": "noun", "score": 0.5101, "certainty": 100}
+  {"word": "dog", "pos": "noun", "score": 0.5101, "certainty": 53},
+  {"word": "barked", "pos": "verb", "score": 0.7008, "certainty": 100},
+  {"word": "loudly", "pos": "adverb", "score": 0.6097, "certainty": 100}
 ]
 ```
 

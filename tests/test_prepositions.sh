@@ -37,6 +37,27 @@ assert_not_preposition() {
     fi
 }
 
+assert_pos() {
+    local description="$1"
+    local sentence="$2"
+    local word="$3"
+    local expected_pos="$4"
+    local output
+    output=$(awk -v CLASSIFIER="$SCRIPT_DIR/../app/pos_classifier.awk" -f "$RUN_POS" "$sentence")
+    local got_pos
+    got_pos=$(echo "$output" | awk -v w="\"$word\"" '$0 ~ "\"word\": " w { gsub(/.*"pos": "/, ""); gsub(/".*/, ""); print; exit }')
+    if [ "$got_pos" = "$expected_pos" ]; then
+        echo "PASS: $description"
+        ((pass++))
+    else
+        echo "FAIL: $description"
+        echo "  Expected: $word -> $expected_pos"
+        echo "  Got:      $word -> $got_pos"
+        echo "  Full:     $output"
+        ((fail++))
+    fi
+}
+
 # Simple prepositions
 assert_preposition "at is a preposition"    "at"
 assert_preposition "by is a preposition"    "by"
@@ -80,6 +101,14 @@ assert_preposition "except is a preposition"   "except"
 assert_preposition "since is a preposition"    "since"
 assert_preposition "until is a preposition"    "until"
 assert_preposition "via is a preposition"      "via"
+
+# From "The only person you are destined to become is the person you decide to be."
+assert_pos "to is a preposition in 'The only person you are destined to become is the person you decide to be.'" \
+    "The only person you are destined to become is the person you decide to be." "to" "preposition"
+
+# From "Moby Dick is a classic story about challenges and obsession."
+assert_pos "about is a preposition after noun in 'Moby Dick is a classic story about challenges and obsession.'" \
+    "Moby Dick is a classic story about challenges and obsession." "about" "preposition"
 
 # Non-prepositions
 assert_not_preposition "dog is not a preposition"   "dog"

@@ -37,6 +37,27 @@ assert_not_conjunction() {
     fi
 }
 
+assert_pos() {
+    local description="$1"
+    local sentence="$2"
+    local word="$3"
+    local expected_pos="$4"
+    local output
+    output=$(awk -v CLASSIFIER="$SCRIPT_DIR/../app/pos_classifier.awk" -f "$RUN_POS" "$sentence")
+    local got_pos
+    got_pos=$(echo "$output" | awk -v w="\"$word\"" '$0 ~ "\"word\": " w { gsub(/.*"pos": "/, ""); gsub(/".*/, ""); print; exit }')
+    if [ "$got_pos" = "$expected_pos" ]; then
+        echo "PASS: $description"
+        ((pass++))
+    else
+        echo "FAIL: $description"
+        echo "  Expected: $word -> $expected_pos"
+        echo "  Got:      $word -> $got_pos"
+        echo "  Full:     $output"
+        ((fail++))
+    fi
+}
+
 # Coordinating conjunctions
 assert_conjunction "and is a conjunction"     "and"
 assert_conjunction "but is a conjunction"     "but"
@@ -65,6 +86,14 @@ assert_conjunction "hence is a conjunction"       "hence"
 # Correlative conjunctions
 assert_conjunction "either is a conjunction"  "either"
 assert_conjunction "both is a conjunction"    "both"
+
+# From "The only person you are destined to become is the person you decide to be."
+assert_pos "decide is not a conjunction in 'The only person you are destined to become is the person you decide to be.'" \
+    "The only person you are destined to become is the person you decide to be." "decide" "verb"
+
+# From "Moby Dick is a classic story about challenges and obsession."
+assert_pos "and is a conjunction in 'Moby Dick is a classic story about challenges and obsession.'" \
+    "Moby Dick is a classic story about challenges and obsession." "and" "conjunction"
 
 # Non-conjunctions
 assert_not_conjunction "dog is not a conjunction"   "dog"
