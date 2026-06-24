@@ -110,6 +110,16 @@ assert_pos "to is a preposition in 'The only person you are destined to become i
 assert_pos "about is a preposition after noun in 'Moby Dick is a classic story about challenges and obsession.'" \
     "Moby Dick is a classic story about challenges and obsession." "about" "preposition"
 
+# From "I love how sparkling water makes my tongue tingle."
+assert_pos "tongue is not a preposition in 'I love how sparkling water makes my tongue tingle.'" \
+    "I love how sparkling water makes my tongue tingle." "tongue" "noun"
+
+# From "Welcome to the Progress Report for Dolphin Release 2606"
+assert_pos "to is a preposition in 'Welcome to the Progress Report for Dolphin Release 2606'" \
+    "Welcome to the Progress Report for Dolphin Release 2606" "to" "preposition"
+assert_pos "for is a preposition in 'Welcome to the Progress Report for Dolphin Release 2606'" \
+    "Welcome to the Progress Report for Dolphin Release 2606" "for" "preposition"
+
 # Non-prepositions
 assert_not_preposition "dog is not a preposition"   "dog"
 assert_not_preposition "run is not a preposition"   "run"

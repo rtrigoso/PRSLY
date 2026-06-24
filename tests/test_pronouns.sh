@@ -106,6 +106,12 @@ assert_pos "you is a pronoun in 'The only person you are destined to become is t
 assert_pos "story is not a pronoun in 'Moby Dick is a classic story about challenges and obsession.'" \
     "Moby Dick is a classic story about challenges and obsession." "story" "noun"
 
+# From "I love how sparkling water makes my tongue tingle."
+assert_pos "I is a pronoun in 'I love how sparkling water makes my tongue tingle.'" \
+    "I love how sparkling water makes my tongue tingle." "I" "pronoun"
+assert_pos "my is a pronoun in 'I love how sparkling water makes my tongue tingle.'" \
+    "I love how sparkling water makes my tongue tingle." "my" "pronoun"
+
 # Non-pronouns
 assert_not_pronoun "dog is not a pronoun"   "dog"
 assert_not_pronoun "run is not a pronoun"   "run"

@@ -74,20 +74,23 @@ Words whose surface form would mislead morphological rules. These are checked fi
 | Previous word is an adjective | +3 |
 | Previous word is an adjective and word before that is a determiner | +4 |
 | Previous word is a verb and word before that is a verb | +3 |
+| Capitalised word and previous word is a verb | +3 |
+| Previous word is a verb and sentence ends | +3 |
 | Previous word is a preposition | +3 |
 | Word two positions back is a determiner and previous word is not a noun | +3 |
+| Previous word is a possessive pronoun (my, your, his, its, our, their) | +4 |
 
 ### Positional — Negative
 
 | Context | Score |
 |---------|-------|
-| Previous word is a pronoun | -3 |
+| Previous word is a non-possessive pronoun | -3 |
 
 ### Next-Word
 
 | Context | Guard | Score |
 |---------|-------|-------|
-| Next word is an auxiliary | pronoun_pos == 0 | +4 |
+| Next word is an auxiliary | pronoun_pos == 0, prev word is not "to" | +4 |
 
 ---
 
@@ -139,10 +142,12 @@ Words whose surface form would mislead morphological rules. These are checked fi
 
 | Context | Guard | Score |
 |---------|-------|-------|
-| Previous word is a pronoun | — | +4 |
+| Previous word is a non-possessive pronoun | — | +4 |
 | Previous word is a noun | preposition_pos == 0, conjunction_pos == 0 | +4 |
 | Previous word is an auxiliary | — | +4 |
 | Previous word is a verb | `-ing` suffix | +4 |
+| Previous word is an adverb, word before that is a pronoun | — | +4 |
+| Previous word is preposition "to" | — | +5 |
 
 ### Positional — Negative
 
@@ -151,12 +156,21 @@ Words whose surface form would mislead morphological rules. These are checked fi
 | Previous word is a determiner | -6 |
 | Word two positions back is a determiner | -4 |
 
+### Morphological + Positional — Negative
+
+| Pattern | Context | Guard | Score |
+|---------|---------|-------|-------|
+| `-ing` suffix | Previous word is an adverb | Previous-previous word is not an auxiliary | -2 |
+
+This prevents attributive `-ing` adjectives (e.g. *sparkling water*, *running water*) from being pulled toward verb when they follow an adverb. The auxiliary guard preserves progressive constructions like *is quickly running* where the adverb slots between an auxiliary and a true verb.
+
 ### Next-Word
 
 | Context | Guard | Score |
 |---------|-------|-------|
 | Next word is a preposition | preposition_pos == 0, conjunction_pos == 0, determiner_pos == 0 | +4 |
 | Next word is an adverb | preposition_pos == 0, conjunction_pos == 0, determiner_pos == 0 | +2 |
+| Next word is a pronoun | pronoun_pos == 0, preposition_pos == 0, conjunction_pos == 0, determiner_pos == 0 | +3 |
 
 ---
 
@@ -222,7 +236,7 @@ Determiners are resolved deterministically — they skip the scoring system enti
 | Previous word is a determiner | next word is a noun | +3 |
 | Previous word is an adverb | — | +3 |
 | Previous word is an auxiliary | — | +5 |
-| Previous word is a pronoun | next word is a noun | +3 |
+| Previous word is a possessive pronoun (my, your, his, its, our, their) | next word is a noun | +3 |
 
 ### Positional — Negative
 
@@ -245,7 +259,7 @@ Determiners are resolved deterministically — they skip the scoring system enti
 
 | Pattern | Example | Score |
 |---------|---------|-------|
-| `-ly` suffix | quickly, slowly | +3 |
+| `-ly` suffix | quickly, slowly | +5 |
 | `-ward`, `-wards` suffix | backward, upwards | +4 |
 | `-wise` suffix | clockwise, likewise | +5 |
 | `-ways` suffix | sideways, always | +3 |
@@ -257,6 +271,7 @@ Determiners are resolved deterministically — they skip the scoring system enti
 | always, never, often, rarely, sometimes, usually | +4 |
 | now, then, soon, today, yesterday | +4 |
 | already, still, almost, nearly, just, barely, hardly | +4 |
+| how | +4 |
 | very, quite, rather | +3 |
 
 ### Positional — Positive
@@ -327,3 +342,31 @@ Determiners are resolved deterministically — they skip the scoring system enti
 | Pattern | Score |
 |---------|-------|
 | `-tion`, `-ment`, `-ing`, `-ed` suffix | -3 |
+
+---
+
+## Number
+
+Rules that apply only when the current token begins with a digit.
+
+### Morphological — Positive
+
+| Pattern | Predicted POS | Score | Counter |
+|---------|--------------|-------|---------|
+| Ordinal suffix (`-st`, `-nd`, `-rd`, `-th`) | adjective | +8 | noun -8 |
+| Digit(s) + hyphen + letters (e.g. `5-bedroom`) | adjective | +6 | noun -4 |
+
+### Positional — Positive
+
+| Context | Predicted POS | Confidence | Score |
+|---------|--------------|------------|-------|
+| Previous word is `is`, `was`, or `equals` | noun | Very high | +8 |
+| Previous word is an arithmetic operator (`+` `-` `=` `/`) | noun | Very high | +8 |
+| Previous word is a capitalised noun, no connector | noun | Very high | +8 |
+| Previous word is a determiner and next word is a noun | adjective | Very high | +8 |
+| Previous word is a preposition | noun | High | +6 |
+| Next word is a noun, previous word is not a determiner, no preposition context | determiner | High | +6 |
+| Start of sentence and next word is a verb | noun | High | +6 |
+| Previous word is a determiner and next word is absent or sentence ends | noun | High | +6 |
+| Previous word is a preposition and next word is a noun (unit of measure) | noun | Medium | +4 |
+| Start of sentence and next word is not a verb | noun | Medium | +4 |

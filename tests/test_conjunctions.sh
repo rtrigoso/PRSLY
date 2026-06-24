@@ -95,6 +95,10 @@ assert_pos "decide is not a conjunction in 'The only person you are destined to 
 assert_pos "and is a conjunction in 'Moby Dick is a classic story about challenges and obsession.'" \
     "Moby Dick is a classic story about challenges and obsession." "and" "conjunction"
 
+# From "I love how sparkling water makes my tongue tingle."
+assert_pos "how is not a conjunction in 'I love how sparkling water makes my tongue tingle.'" \
+    "I love how sparkling water makes my tongue tingle." "how" "adverb"
+
 # Non-conjunctions
 assert_not_conjunction "dog is not a conjunction"   "dog"
 assert_not_conjunction "run is not a conjunction"   "run"

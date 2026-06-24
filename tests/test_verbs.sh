@@ -104,6 +104,20 @@ assert_pos "become is a verb in 'The only person you are destined to become is t
 assert_pos "be is a verb in 'The only person you are destined to become is the person you decide to be.'" \
     "The only person you are destined to become is the person you decide to be." "be" "verb"
 
+# From "I love how sparkling water makes my tongue tingle."
+assert_pos "love is a verb in 'I love how sparkling water makes my tongue tingle.'" \
+    "I love how sparkling water makes my tongue tingle." "love" "verb"
+assert_pos "makes is a verb in 'I love how sparkling water makes my tongue tingle.'" \
+    "I love how sparkling water makes my tongue tingle." "makes" "verb"
+assert_pos "tingle is a verb in 'I love how sparkling water makes my tongue tingle.'" \
+    "I love how sparkling water makes my tongue tingle." "tingle" "verb"
+
+# From "Welcome to the Progress Report for Dolphin Release 2606"
+assert_pos "Welcome is a verb in 'Welcome to the Progress Report for Dolphin Release 2606'" \
+    "Welcome to the Progress Report for Dolphin Release 2606" "Welcome" "verb"
+assert_pos "Release is a verb in 'Welcome to the Progress Report for Dolphin Release 2606'" \
+    "Welcome to the Progress Report for Dolphin Release 2606" "Release" "verb"
+
 # Non-verbs
 assert_not_verb "and is not a verb"      "and"
 assert_not_verb "quickly is not a verb"  "quickly"

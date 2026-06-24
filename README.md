@@ -11,7 +11,7 @@ This tool exists as a pushback against the growing habit of reaching for AI to s
 ## Features
 
 - Identifies parts of speech: nouns, verbs, adjectives, adverbs, pronouns, conjunctions, prepositions, determiners, auxiliaries, and interjections
-- Multi-pass classification using left and right neighbour context
+- Bidirectional iterative classification that converges on stable labels
 - Written in pure AWK with no interpreter, no runtime, and no dependencies
 - Distributed as native packages for major Linux distros and macOS
 - Bash-based test suite
@@ -70,35 +70,33 @@ prsly the dog barked loudly
 prsly running
 
 # Pipe input
-echo "she runs quickly" | prsly
+echo "She quietly reads every morning" | prsly
 ```
 
 ### Sample Output
 
 ```json
 [
-  {"word": "the", "pos": "determiner", "score": 0.5101, "certainty": 100},
-  {"word": "dog", "pos": "noun", "score": 0.5101, "certainty": 53},
-  {"word": "barked", "pos": "verb", "score": 0.7008, "certainty": 100},
-  {"word": "loudly", "pos": "adverb", "score": 0.6097, "certainty": 100}
+  {"word": "She", "pos": "pronoun", "certainty": 0.5101},
+  {"word": "quietly", "pos": "adverb", "certainty": 0.5655},
+  {"word": "reads", "pos": "verb", "certainty": 0.6457},
+  {"word": "every", "pos": "noun", "certainty": 0.4385},
+  {"word": "morning", "pos": "verb", "certainty": 0.6457}
 ]
 ```
 
 Each entry includes:
 - `word` — the original token
 - `pos` — the assigned part of speech
-- `score` — the Wilson score lower bound for this classification (see below)
-- `certainty` — the winning score as a percentage of the sum of all Wilson scores
+- `certainty` — the Wilson score lower bound for the winning category, in the range [0, 1]
 
 ## How It Works
 
-Classification runs in four passes over the input words:
+Classification runs in three stages:
 
-1. **Pass 1** — score each word using only left-context labels (previous one or two words)
-2. **Pass 2** — re-score any `unknown` words using the nearest resolved neighbours from Pass 1
-3. **Pass 3** — re-score any still-unknown words using Pass 2 resolved neighbours
-4. **Pass 4** — re-score low-certainty words using fully resolved neighbours from all sides
-5. **Output pass** — re-run final scoring with resolved neighbour labels to produce display output
+1. **Bootstrap pass** — score each word left-to-right using only left-context labels (previous one or two words), establishing initial labels with no right-context bias
+2. **Bidirectional convergence loop** — alternate a forward (left-to-right) and backward (right-to-left) sweep, updating any word whose certainty improves or whose label was `unknown`, until no labels change or a maximum of 10 iterations is reached
+3. **Output pass** — re-run each word with its fully resolved neighbours to produce the final JSON output
 
 Trailing punctuation (`.`, `!`, `?`) is stripped from each token before classification. Sentence-ending punctuation also resets context so the following word is not influenced by the previous sentence.
 
@@ -115,7 +113,7 @@ where `n = pos + neg` and `z = 1.96` (95% confidence). The result is a value in 
 
 The Wilson lower bound gives more meaningful scores than a raw net sum because it accounts for how much evidence exists, not just which side leads. A category supported by four strong signals and opposed by none scores higher than one supported by a single signal with no opposition — even if both have the same net count. Words with little evidence (few matching rules) receive a lower floor, which naturally expresses uncertainty rather than false confidence.
 
-The category with the highest Wilson score wins and is assigned as `pos`. Auxiliaries (`is`, `was`, `will`, etc.) bypass scoring entirely and are assigned with `score: 1.0000, certainty: 100`.
+The category with the highest Wilson score wins and is assigned as `pos`. Auxiliaries (`is`, `was`, `will`, etc.) bypass scoring entirely and are assigned with `certainty: 1.0000`.
 
 ## Manual
 
@@ -190,7 +188,7 @@ prsly/
     Makefile            Build, install, test, and package targets
     app/
         pos_classifier.awk  Scoring rules for all parts of speech
-        run_pos.awk         Multi-pass sentence classifier (executable)
+        run_pos.awk         Bidirectional iterative sentence classifier (executable)
     tests/              Bash test scripts
         test_pronouns.sh
         test_conjunctions.sh

@@ -106,6 +106,18 @@ assert_pos "obsession is a noun in 'Moby Dick is a classic story about challenge
 assert_pos "person is a noun in 'The only person you are destined to become is the person you decide to be.'" \
     "The only person you are destined to become is the person you decide to be." "person" "noun"
 
+# From "I love how sparkling water makes my tongue tingle."
+assert_pos "water is a noun in 'I love how sparkling water makes my tongue tingle.'" \
+    "I love how sparkling water makes my tongue tingle." "water" "noun"
+assert_pos "tongue is a noun in 'I love how sparkling water makes my tongue tingle.'" \
+    "I love how sparkling water makes my tongue tingle." "tongue" "noun"
+
+# From "Welcome to the Progress Report for Dolphin Release 2606"
+assert_pos "Progress is a noun in 'Welcome to the Progress Report for Dolphin Release 2606'" \
+    "Welcome to the Progress Report for Dolphin Release 2606" "Progress" "noun"
+assert_pos "Dolphin is a noun in 'Welcome to the Progress Report for Dolphin Release 2606'" \
+    "Welcome to the Progress Report for Dolphin Release 2606" "Dolphin" "noun"
+
 # Non-nouns
 assert_not_noun "quickly is not a noun"  "quickly"
 assert_not_noun "and is not a noun"      "and"

@@ -56,14 +56,16 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 
 /ly$/                   { noun_neg += 3 }
 
-/./  { if (prev1_label == "determiner")                                noun_pos += 4 }
-/./  { if (prev1_label == "adjective")                                 noun_pos += 3 }
-/./  { if (prev1_label == "adjective" && prev2_label == "determiner")  noun_pos += 4 }
-/./  { if (prev1_label == "verb"      && prev2_label == "verb")        noun_pos += 3 }
-/./  { if (prev1_label == "preposition")                               noun_pos += 3 }
-/./  { if (prev2_label == "determiner" && prev1_label != "noun")        noun_pos += 3 }
+/./  && prev1_label == "determiner"                                { noun_pos += 4 }
+/./  && prev1_label == "adjective"                                 { noun_pos += 3 }
+/./  && prev1_label == "adjective" && prev2_label == "determiner"  { noun_pos += 4 }
+/./  && prev1_label == "verb"      && prev2_label == "verb"        { noun_pos += 3 }
+/^[A-Z][a-z]/  && prev1_label == "verb"                           { noun_pos += 3 }
+/./            && prev1_label == "verb" && IS_SENT_END             { noun_pos += 3 }
+/./  && prev1_label == "preposition"                               { noun_pos += 3 }
+/./  && prev2_label == "determiner" && prev1_label != "noun"        { noun_pos += 3 }
 
-/./  { if (prev1_label == "pronoun" && prev1_word !~ /^([Mm]y|[Yy]our|[Hh]is|[Ii]ts|[Oo]ur|[Tt]heir)$/) noun_neg += 3 }
+/./  && prev1_label == "pronoun" && prev1_word !~ /^([Mm]y|[Yy]our|[Hh]is|[Ii]ts|[Oo]ur|[Tt]heir)$/ { noun_neg += 3 }
 
 /^[Ii]$/                { pronoun_pos += 4 }
 /^[Hh]e$/               { pronoun_pos += 4 }
@@ -90,17 +92,17 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /^[Ww]hich$/            { pronoun_pos += 3 }
 /^[Tt]hat$/             { pronoun_pos += 3 }
 
-/./  { if (prev1_label == "determiner")  pronoun_neg += 3 }
+/./  && prev1_label == "determiner"  { pronoun_neg += 3 }
 
 /ing$/                  { verb_pos += 3 }
 /ed$/                   { verb_pos += 3 }
 /(ize|ise)$/            { verb_pos += 4 }
 /(ify|fy)$/             { verb_pos += 4 }
-/^[Rr]e[a-zA-Z]{3,}/   { if ($0 !~ /ly$/) verb_pos += 3 }
-/^[Dd]e[a-zA-Z]{3,}/   { if ($0 !~ /ly$/) verb_pos += 3 }
-/^[Uu]n[a-zA-Z]{3,}/   { if ($0 !~ /ly$/) verb_pos += 3 }
-/^[Mm]is[a-zA-Z]{3,}/  { if ($0 !~ /ly$/) verb_pos += 3 }
-/^[Oo]ut[a-zA-Z]{3,}/  { if ($0 !~ /ly$/) verb_pos += 3 }
+/^[Rr]e[a-zA-Z]{3,}/   && !/ly$/  { verb_pos += 3 }
+/^[Dd]e[a-zA-Z]{3,}/   && !/ly$/  { verb_pos += 3 }
+/^[Uu]n[a-zA-Z]{3,}/   && !/ly$/  { verb_pos += 3 }
+/^[Mm]is[a-zA-Z]{3,}/  && !/ly$/  { verb_pos += 3 }
+/^[Oo]ut[a-zA-Z]{3,}/  && !/ly$/  { verb_pos += 3 }
 
 /^[a-zA-Z]{4,}en$/      { verb_pos += 3 }
 
@@ -108,12 +110,13 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 
 /(tion|ness|ment)$/     { verb_neg += 3 }
 
-/./  { if (prev1_label == "pronoun" && prev1_word !~ /^([Mm]y|[Yy]our|[Hh]is|[Ii]ts|[Oo]ur|[Tt]heir)$/) verb_pos += 4 }
-/./  { if (prev1_label == "auxiliary") verb_pos += 4 }
-/ing$/  { if (prev1_label == "verb")  verb_pos += 4 }
+/./  && prev1_label == "pronoun" && prev1_word !~ /^([Mm]y|[Yy]our|[Hh]is|[Ii]ts|[Oo]ur|[Tt]heir)$/ { verb_pos += 4 }
+/./  && prev1_label == "auxiliary" { verb_pos += 4 }
+/ing$/  && prev1_label == "verb"  { verb_pos += 4 }
+/ing$/  && prev1_label == "adverb" && prev2_label != "auxiliary" { verb_neg += 2 }
 
-/./  { if (prev1_label == "determiner") verb_neg += 6 }
-/./  { if (prev2_label == "determiner") verb_neg += 4 }
+/./  && prev1_label == "determiner" { verb_neg += 6 }
+/./  && prev2_label == "determiner" { verb_neg += 4 }
 
 /^[Ii]s$/               { is_aux = 1 }
 /^[Ww]as$/              { is_aux = 1 }
@@ -156,13 +159,13 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 
 /ly$/                   { adjective_neg += 4 }
 
-/./  { if (prev1_label == "determiner" && next1_label == "noun") adjective_pos += 3 }
-/./  { if (prev1_label == "adverb")     adjective_pos += 3 }
-/./  { if (prev1_label == "auxiliary")  adjective_pos += 5 }
-/./  { if (prev1_label == "pronoun" && next1_label == "noun") adjective_pos += 3 }
+/./  && prev1_label == "determiner" && next1_label == "noun" { adjective_pos += 3 }
+/./  && prev1_label == "adverb"     { adjective_pos += 3 }
+/./  && prev1_label == "auxiliary"  { adjective_pos += 5 }
+/./  && prev1_word ~ /^([Mm]y|[Yy]our|[Hh]is|[Ii]ts|[Oo]ur|[Tt]heir)$/ && next1_label == "noun" { adjective_pos += 3 }
 
-/./  { if (prev1_label == "pronoun" && next1_label != "noun")    adjective_neg += 3 }
-/./  { if (prev1_label == "noun")       adjective_neg += 2 }
+/./  && prev1_label == "pronoun" && next1_label != "noun"    { adjective_neg += 3 }
+/./  && prev1_label == "noun"       { adjective_neg += 2 }
 
 /ly$/                   { adverb_pos += 5 }
 /wards?$/               { adverb_pos += 4 }
@@ -192,10 +195,10 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /^[Qq]uite$/            { adverb_pos += 3 }
 /^[Rr]ather$/           { adverb_pos += 3 }
 
-/./  { if (prev1_label == "verb")      adverb_pos += 3 }
-/./  { if (prev1_label == "adjective") adverb_pos += 3 }
+/./  && prev1_label == "verb"      { adverb_pos += 3 }
+/./  && prev1_label == "adjective" { adverb_pos += 3 }
 
-/./  { if (prev1_label == "determiner") adverb_neg += 4 }
+/./  && prev1_label == "determiner" { adverb_neg += 4 }
 
 /^[Ii]n$/               { preposition_pos += 4 }
 /^[Oo]n$/               { preposition_pos += 4 }
@@ -285,14 +288,16 @@ function wilson_lower(pos, neg,    n, p_hat, z2, w) {
 /(tion|ment|ing|ed)$/   { interjection_neg += 3 }
 
 END {
+    if (CURRENT_WORD == "") exit
+
     if (is_det) {
-        print "  {\"word\": \"" CURRENT_WORD "\", \"pos\": \"determiner\", \"score\": 1.0000, \"certainty\": 100}"
+        print "  {\"word\": \"" CURRENT_WORD "\", \"pos\": \"determiner\", \"certainty\": 1.0000}"
         if (LABEL_FILE != "") print "determiner" > LABEL_FILE
         exit
     }
 
     if (is_aux) {
-        print "  {\"word\": \"" CURRENT_WORD "\", \"pos\": \"auxiliary\", \"score\": 1.0000, \"certainty\": 100}"
+        print "  {\"word\": \"" CURRENT_WORD "\", \"pos\": \"auxiliary\", \"certainty\": 1.0000}"
         if (LABEL_FILE != "") print "auxiliary" > LABEL_FILE
         exit
     }
@@ -307,9 +312,6 @@ END {
     interjection_w = wilson_lower(interjection_pos,  interjection_neg)
     determiner_w   = wilson_lower(determiner_pos,    determiner_neg)
 
-    total = noun_w + pronoun_w + verb_w + adjective_w + adverb_w \
-          + preposition_w + conjunction_w + interjection_w + determiner_w
-
     best_score = 0
     best_label = "unknown"
 
@@ -323,32 +325,42 @@ END {
     if (interjection_w > best_score) { best_score = interjection_w; best_label = "interjection" }
     if (determiner_w   > best_score) { best_score = determiner_w;   best_label = "determiner"   }
 
-    if (total > 0)
-        pct = int((best_score / total) * 100)
-    else
-        pct = 0
-
-    printf "  {\"word\": \"%s\", \"pos\": \"%s\", \"score\": %.4f, \"certainty\": %d}\n", \
-        CURRENT_WORD, best_label, best_score, pct
+    printf "  {\"word\": \"%s\", \"pos\": \"%s\", \"certainty\": %.4f}\n", \
+        CURRENT_WORD, best_label, best_score
 
     if (LABEL_FILE != "") print best_label > LABEL_FILE
 }
 
-/./  { if (prev1_label == "noun" && preposition_pos == 0 && conjunction_pos == 0) verb_pos += 4 }
+/./  && prev1_label == "noun" && preposition_pos == 0 && conjunction_pos == 0 { verb_pos += 4 }
 
-/./  { if (prev1_label == "adverb" && prev2_label == "pronoun") verb_pos += 4 }
+/./  && prev1_label == "adverb" && prev2_label == "pronoun" { verb_pos += 4 }
 
-/./  { if (next1_label == "preposition" && preposition_pos == 0 && conjunction_pos == 0 && determiner_pos == 0) verb_pos += 4 }
+/./  && next1_label == "preposition" && preposition_pos == 0 && conjunction_pos == 0 && determiner_pos == 0 { verb_pos += 4 }
 
-/./  { if (next1_label == "adverb" && preposition_pos == 0 && conjunction_pos == 0 && determiner_pos == 0) verb_pos += 2 }
+/./  && next1_label == "adverb" && preposition_pos == 0 && conjunction_pos == 0 && determiner_pos == 0 { verb_pos += 2 }
 
-/./  { if (next1_label == "auxiliary" && pronoun_pos == 0 && prev1_word != "to")   noun_pos += 4 }
+/./  && next1_label == "pronoun" && pronoun_pos == 0 && preposition_pos == 0 && conjunction_pos == 0 && determiner_pos == 0 { verb_pos += 3 }
 
-/./  { if (prev1_word ~ /^([Mm]y|[Yy]our|[Hh]is|[Ii]ts|[Oo]ur|[Tt]heir)$/) noun_pos += 4 }
+/./  && next1_label == "auxiliary" && pronoun_pos == 0 && prev1_word != "to"   { noun_pos += 4 }
 
-/./  { if (prev1_label == "preposition" && prev1_word == "to") verb_pos += 5 }
+/./  && prev1_word ~ /^([Mm]y|[Yy]our|[Hh]is|[Ii]ts|[Oo]ur|[Tt]heir)$/ { noun_pos += 4 }
 
-/./  { if (next1_label == "noun" && determiner_pos == 0 && preposition_pos == 0 && pronoun_pos == 0 && conjunction_pos == 0) adjective_pos += 4 }
+/./  && prev1_label == "preposition" && prev1_word == "to" { verb_pos += 5 }
 
-/./  { if (next1_label == "adjective" && preposition_pos == 0 && conjunction_pos == 0 && determiner_pos == 0) adverb_pos += 2 }
-/./  { if (next1_label == "adjective" && prev1_label == "determiner") adverb_neg += 4 }
+/./  && next1_label == "noun" && determiner_pos == 0 && preposition_pos == 0 && pronoun_pos == 0 && conjunction_pos == 0 { adjective_pos += 4 }
+
+/./  && next1_label == "adjective" && preposition_pos == 0 && conjunction_pos == 0 && determiner_pos == 0 { adverb_pos += 2 }
+/./  && next1_label == "adjective" && prev1_label == "determiner" { adverb_neg += 4 }
+
+/^[0-9]+(st|nd|rd|th)$/                                                                                              { adjective_pos += 8; noun_neg += 8 }
+/^[0-9]+-[a-zA-Z]+$/                                                                                                 { adjective_pos += 6; noun_neg += 4 }
+/^[0-9]/ && prev1_word ~ /^([Ii]s|[Ww]as|[Ee]quals?)$/                                                              { noun_pos += 8 }
+/^[0-9]/ && prev1_word ~ /^[+\-=\/]$/                                                                                { noun_pos += 8 }
+/^[0-9]/ && prev1_word ~ /^[A-Z]/ && prev1_label == "noun" && conjunction_pos == 0 && preposition_pos == 0          { noun_pos += 8 }
+/^[0-9]/ && prev1_label == "determiner" && next1_label == "noun"                                                     { adjective_pos += 8 }
+/^[0-9]/ && prev1_label == "preposition"                                                                             { noun_pos += 6 }
+/^[0-9]/ && next1_label == "noun" && prev1_label != "determiner" && preposition_pos == 0                            { determiner_pos += 6 }
+/^[0-9]/ && prev1_label == "" && next1_label == "verb"                                                               { noun_pos += 6 }
+/^[0-9]/ && prev1_label == "determiner" && (next1_label == "" || IS_SENT_END)                                        { noun_pos += 6 }
+/^[0-9]/ && next1_label == "noun" && prev1_label == "preposition"                                                    { noun_pos += 4 }
+/^[0-9]/ && prev1_label == "" && next1_label != "verb" && next1_label != ""                                          { noun_pos += 4 }
